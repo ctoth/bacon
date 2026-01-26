@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { checkRegistry } from '../src/checks/registry.js';
-import { checkSemantics } from '../src/checks/semantics.js';
 import { checkGraph } from '../src/checks/graph.js';
-import { Registry, Semantics, Graph } from '../src/types.js';
+import { Registry, Graph } from '../src/types.js';
 
 describe('checkRegistry', () => {
   it('accepts valid registry', () => {
@@ -71,58 +70,6 @@ describe('checkRegistry', () => {
     const errors = issues.filter(i => i.severity === 'error');
     expect(errors.length).toBe(1);
     expect(errors[0].message).toContain('Duplicate');
-  });
-});
-
-describe('checkSemantics', () => {
-  it('accepts valid semantics', () => {
-    const sem: Semantics = {
-      bacon: '0.1',
-      name: 'test',
-      params: {
-        volume: { type: 'float', range: [0, 1], default: 0.8 },
-      },
-      realize: {
-        gain: 'volume',
-      },
-    };
-    const issues = checkSemantics(sem);
-    expect(issues.filter(i => i.severity === 'error')).toEqual([]);
-  });
-
-  it('detects invalid range', () => {
-    const sem: Semantics = {
-      bacon: '0.1',
-      name: 'bad',
-      params: {
-        x: { range: [10, 0] },
-      },
-    };
-    const issues = checkSemantics(sem);
-    expect(issues.some(i => i.message.includes('min'))).toBe(true);
-  });
-
-  it('detects name collisions', () => {
-    const sem: Semantics = {
-      bacon: '0.1',
-      name: 'collision',
-      params: { foo: {} },
-      constants: { foo: 42 },
-    };
-    const issues = checkSemantics(sem);
-    expect(issues.some(i => i.message.includes('collision'))).toBe(true);
-  });
-
-  it('detects duplicate function params', () => {
-    const sem: Semantics = {
-      bacon: '0.1',
-      name: 'dupfn',
-      functions: {
-        bad: { params: ['x', 'x'], expr: 'x + x' },
-      },
-    };
-    const issues = checkSemantics(sem);
-    expect(issues.some(i => i.message.includes('Duplicate'))).toBe(true);
   });
 });
 

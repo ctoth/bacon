@@ -4,10 +4,9 @@ import { basename } from 'path';
 import { readDocument, writeDocument, resolvePath } from './io.js';
 import { Validator, guessKind, SchemaKind, ValidationIssue } from './validate.js';
 import { checkRegistry } from './checks/registry.js';
-import { checkSemantics } from './checks/semantics.js';
 import { checkGraph, GraphCheckContext } from './checks/graph.js';
 import { CheckIssue } from './checks/types.js';
-import { Graph, Registry, Semantics } from './types.js';
+import { Graph, Registry } from './types.js';
 
 interface PrintOptions {
   json: boolean;
@@ -43,7 +42,7 @@ program
   .command('validate')
   .description('Validate a document against its schema')
   .argument('<file>', 'YAML or JSON document')
-  .option('-k, --kind <kind>', 'schema kind (graph|registry|semantics|auto)', 'auto')
+  .option('-k, --kind <kind>', 'schema kind (graph|registry|auto)', 'auto')
   .option('--json', 'JSON output', false)
   .action((file: string, opts: { kind: string; json: boolean }) => {
     const validator = new Validator();
@@ -104,26 +103,6 @@ program
       if (regChecks.length) {
         printIssues(`checks:registry (${basename(regPath)})`, regChecks, opts);
         allIssues = allIssues.concat(regChecks);
-      }
-    }
-
-    // Load and check semantics if referenced
-    if (typeof meta.semantics === 'string') {
-      const semPath = resolvePath(graphFile, meta.semantics);
-      const rawSem = readDocument(semPath);
-
-      const semSchemaIssues = validator.validate('semantics', rawSem);
-      if (semSchemaIssues.length) {
-        printIssues(`schema:semantics (${basename(semPath)})`, semSchemaIssues.map(i => ({ ...i, severity: 'error' as const })), opts);
-        process.exitCode = 1;
-        return;
-      }
-
-      ctx.semantics = rawSem as Semantics;
-      const semChecks = checkSemantics(ctx.semantics);
-      if (semChecks.length) {
-        printIssues(`checks:semantics (${basename(semPath)})`, semChecks, opts);
-        allIssues = allIssues.concat(semChecks);
       }
     }
 

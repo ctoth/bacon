@@ -1,7 +1,6 @@
 import {
   Graph,
   Registry,
-  Semantics,
   isIdentifier,
   isBindValue,
   isExprValue,
@@ -14,12 +13,11 @@ import { CheckIssue } from './types.js';
 
 export interface GraphCheckContext {
   registry?: Registry;
-  semantics?: Semantics;
 }
 
 export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssue[] {
   const issues: CheckIssue[] = [];
-  const { registry, semantics } = ctx;
+  const { registry } = ctx;
 
   const nodeIds = new Set(Object.keys(graph.nodes));
 
@@ -61,7 +59,7 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
             } else {
               // Validate param value against definition
               const paramDef = prim.params[paramName];
-              const valueIssues = validateParamValue(paramValue, paramDef, paramPath, semantics);
+              const valueIssues = validateParamValue(paramValue, paramDef, paramPath);
               issues.push(...valueIssues);
             }
           }
@@ -95,7 +93,7 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
 
     // Validate bypass if present
     if (node.bypass !== undefined) {
-      const bypassIssues = validateParamValue(node.bypass, { type: 'bool' }, `${nodePath}/bypass`, semantics);
+      const bypassIssues = validateParamValue(node.bypass, { type: 'bool' }, `${nodePath}/bypass`);
       issues.push(...bypassIssues);
     }
   }
@@ -135,7 +133,7 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
 
       // Check gain if present
       if (!Array.isArray(conn) && conn.gain !== undefined) {
-        const gainIssues = validateParamValue(conn.gain, { type: 'float' }, `${connPath}/gain`, semantics);
+        const gainIssues = validateParamValue(conn.gain, { type: 'float' }, `${connPath}/gain`);
         issues.push(...gainIssues);
       }
     }
@@ -177,26 +175,18 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
 function validateParamValue(
   value: ParamValue,
   paramDef: { type?: string; range?: [number, number]; enum?: Array<string | number | boolean> },
-  path: string,
-  semantics?: Semantics
+  path: string
 ): CheckIssue[] {
   const issues: CheckIssue[] = [];
 
   if (isBindValue(value)) {
-    // Check that the bound name exists in semantics
-    if (semantics) {
-      const boundName = value.bind;
-      const allNames = new Set([
-        ...Object.keys(semantics.params || {}),
-        ...Object.keys(semantics.constants || {}),
-      ]);
-      if (!allNames.has(boundName)) {
-        issues.push({
-          severity: 'warning',
-          path,
-          message: `Binding references unknown semantics param/constant: "${boundName}"`,
-        });
-      }
+    // Just validate it's a non-empty string - what it binds to is the runtime's problem
+    if (!value.bind || value.bind.trim().length === 0) {
+      issues.push({
+        severity: 'error',
+        path,
+        message: `Empty binding name`,
+      });
     }
     return issues;
   }

@@ -88,37 +88,6 @@ export interface Registry {
   primitives: Record<string, PrimitiveDef>;
 }
 
-// Semantics types
-export interface InputParamDef {
-  description?: string;
-  type?: 'float' | 'int' | 'bool';
-  range?: [number, number];
-  default?: number | boolean;
-  unit?: string;
-}
-
-export type ConstantDef = number | string | boolean | unknown[] | Record<string, unknown>;
-
-export interface FunctionDef {
-  description?: string;
-  params: string[];
-  expr: string;
-}
-
-export type RealizationRule = string | { description?: string; expr: string; unit?: string };
-
-export interface Semantics {
-  bacon: BaconVersion;
-  name: string;
-  extends?: string;
-  description?: string;
-  meta?: Record<string, unknown>;
-  params?: Record<string, InputParamDef>;
-  constants?: Record<string, ConstantDef>;
-  functions?: Record<string, FunctionDef>;
-  realize?: Record<string, RealizationRule>;
-}
-
 // Type guards
 export function isBindValue(v: unknown): v is BindValue {
   return typeof v === 'object' && v !== null && 'bind' in v && typeof (v as BindValue).bind === 'string';

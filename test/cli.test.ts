@@ -35,12 +35,6 @@ describe('CLI validate', () => {
     expect(result.stdout).toContain('OK');
   });
 
-  it('validates valid semantics', () => {
-    const result = run('validate valid-semantics.yaml');
-    expect(result.code).toBe(0);
-    expect(result.stdout).toContain('OK');
-  });
-
   it('rejects invalid graph', () => {
     const result = run('validate invalid-graph.yaml');
     expect(result.code).toBe(1);
