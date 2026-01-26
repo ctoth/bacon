@@ -1,0 +1,6 @@
+bacon: "0.1"
+nodes:
+  broken:
+    # missing required 'type' field
+    params:
+      foo: 1

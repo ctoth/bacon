@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bacon.audio/schema/graph/0.1",
+  "title": "Bacon Graph",
+  "description": "Declarative signal processing graph IR",
+  "type": "object",
+  "required": ["bacon", "nodes"],
+  "additionalProperties": false,
+  "properties": {
+    "bacon": { "$ref": "common.schema.json#/$defs/version" },
+    "name": {
+      "type": "string",
+      "description": "Human-readable graph name"
+    },
+    "meta": { "$ref": "common.schema.json#/$defs/meta" },
+    "nodes": {
+      "type": "object",
+      "description": "Node definitions keyed by ID",
+      "propertyNames": { "$ref": "common.schema.json#/$defs/identifier" },
+      "additionalProperties": { "$ref": "#/$defs/node" }
+    },
+    "connections": {
+      "type": "array",
+      "description": "Signal flow connections",
+      "items": { "$ref": "common.schema.json#/$defs/connection" }
+    },
+    "inputs": {
+      "type": "array",
+      "description": "Exposed graph inputs",
+      "items": { "$ref": "common.schema.json#/$defs/portRef" }
+    },
+    "outputs": {
+      "type": "array",
+      "description": "Exposed graph outputs",
+      "items": { "$ref": "common.schema.json#/$defs/portRef" }
+    }
+  },
+  "$defs": {
+    "node": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "$ref": "common.schema.json#/$defs/identifier",
+          "description": "Primitive type from registry"
+        },
+        "params": {
+          "type": "object",
+          "description": "Parameter bindings",
+          "propertyNames": { "$ref": "common.schema.json#/$defs/identifier" },
+          "additionalProperties": { "$ref": "common.schema.json#/$defs/paramValue" }
+        },
+        "options": {
+          "type": "object",
+          "description": "Static node configuration",
+          "additionalProperties": true
+        },
+        "bypass": {
+          "$ref": "common.schema.json#/$defs/paramValue",
+          "description": "Bypass condition (passes input through when true)"
+        },
+        "meta": { "$ref": "common.schema.json#/$defs/meta" }
+      }
+    }
+  }
+}

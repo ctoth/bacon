@@ -1,0 +1,9 @@
+bacon: "0.1"
+name: test
+meta:
+  primitives: ./invalid-registry.yaml
+nodes:
+  x:
+    type: bad-range
+    params:
+      level: 50

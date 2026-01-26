@@ -1,0 +1,17 @@
+bacon: "0.1"
+name: simple-synth
+meta:
+  primitives: ./valid-registry.yaml
+nodes:
+  osc1:
+    type: osc
+    params:
+      frequency: 440
+  out:
+    type: gain
+    params:
+      gain: 0.5
+connections:
+  - [osc1, out]
+outputs:
+  - out

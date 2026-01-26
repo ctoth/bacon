@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bacon.audio/schema/semantics/0.1",
+  "title": "Bacon Semantics",
+  "description": "Parameter interpretation and realization rules",
+  "type": "object",
+  "required": ["bacon", "name"],
+  "additionalProperties": false,
+  "properties": {
+    "bacon": { "$ref": "common.schema.json#/$defs/version" },
+    "name": {
+      "$ref": "common.schema.json#/$defs/identifier",
+      "description": "Semantics module name"
+    },
+    "extends": {
+      "$ref": "common.schema.json#/$defs/identifier",
+      "description": "Parent semantics to inherit from"
+    },
+    "description": { "type": "string" },
+    "meta": { "$ref": "common.schema.json#/$defs/meta" },
+    "params": {
+      "type": "object",
+      "description": "Input parameter definitions",
+      "propertyNames": { "$ref": "common.schema.json#/$defs/identifier" },
+      "additionalProperties": { "$ref": "#/$defs/inputParam" }
+    },
+    "constants": {
+      "type": "object",
+      "description": "Named constants available to expressions",
+      "propertyNames": { "$ref": "common.schema.json#/$defs/identifier" },
+      "additionalProperties": { "$ref": "#/$defs/constantDef" }
+    },
+    "functions": {
+      "type": "object",
+      "description": "Named functions available to expressions",
+      "propertyNames": { "$ref": "common.schema.json#/$defs/identifier" },
+      "additionalProperties": { "$ref": "#/$defs/functionDef" }
+    },
+    "realize": {
+      "type": "object",
+      "description": "Output realization rules (input params -> realized values)",
+      "propertyNames": { "$ref": "common.schema.json#/$defs/identifier" },
+      "additionalProperties": { "$ref": "#/$defs/realizationRule" }
+    }
+  },
+  "$defs": {
+    "inputParam": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string" },
+        "type": { "$ref": "common.schema.json#/$defs/paramScalarType" },
+        "range": { "$ref": "common.schema.json#/$defs/numericRange" },
+        "default": {
+          "oneOf": [
+            { "type": "number" },
+            { "type": "boolean" }
+          ]
+        },
+        "unit": { "type": "string" }
+      }
+    },
+    "constantDef": {
+      "oneOf": [
+        { "type": "number" },
+        { "type": "string" },
+        { "type": "boolean" },
+        { "type": "array" },
+        { "type": "object" }
+      ]
+    },
+    "functionDef": {
+      "type": "object",
+      "required": ["params", "expr"],
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string" },
+        "params": {
+          "type": "array",
+          "items": { "$ref": "common.schema.json#/$defs/identifier" },
+          "description": "Parameter names"
+        },
+        "expr": { "$ref": "common.schema.json#/$defs/celExpr" }
+      }
+    },
+    "realizationRule": {
+      "oneOf": [
+        { "$ref": "common.schema.json#/$defs/celExpr" },
+        {
+          "type": "object",
+          "required": ["expr"],
+          "additionalProperties": false,
+          "properties": {
+            "description": { "type": "string" },
+            "expr": { "$ref": "common.schema.json#/$defs/celExpr" },
+            "unit": { "type": "string", "description": "Output unit" }
+          }
+        }
+      ]
+    }
+  }
+}

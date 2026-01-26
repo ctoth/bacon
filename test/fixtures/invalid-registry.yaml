@@ -1,0 +1,8 @@
+bacon: "0.1"
+primitives:
+  bad-range:
+    params:
+      level:
+        type: float
+        range: [100, 0]  # invalid: min > max
+        default: 50

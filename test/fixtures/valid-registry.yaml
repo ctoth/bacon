@@ -1,0 +1,35 @@
+bacon: "0.1"
+primitives:
+  gain:
+    description: Simple gain node
+    native: GainNode
+    inputs: 1
+    outputs: 1
+    params:
+      gain:
+        description: Gain multiplier
+        type: float
+        range: [0, 10]
+        default: 1
+
+  osc:
+    description: Oscillator
+    native: OscillatorNode
+    inputs: 0
+    outputs: 1
+    params:
+      frequency:
+        description: Frequency in Hz
+        type: float
+        range: [20, 20000]
+        default: 440
+        unit: Hz
+      detune:
+        type: float
+        range: [-1200, 1200]
+        default: 0
+        unit: cents
+    options:
+      type:
+        type: string
+        default: sine

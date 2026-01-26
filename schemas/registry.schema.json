@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bacon.audio/schema/registry/0.1",
+  "title": "Bacon Primitives Registry",
+  "description": "Node type definitions for Bacon graphs",
+  "type": "object",
+  "required": ["bacon", "primitives"],
+  "additionalProperties": false,
+  "properties": {
+    "bacon": { "$ref": "common.schema.json#/$defs/version" },
+    "primitives": {
+      "type": "object",
+      "description": "Primitive definitions keyed by type name",
+      "propertyNames": { "$ref": "common.schema.json#/$defs/identifier" },
+      "additionalProperties": { "$ref": "#/$defs/primitive" }
+    }
+  },
+  "$defs": {
+    "primitive": {
+      "type": "object",
+      "required": ["params"],
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string" },
+        "wasm": {
+          "type": "string",
+          "description": "WASM module filename"
+        },
+        "worklet": {
+          "type": "string",
+          "description": "AudioWorklet processor filename"
+        },
+        "native": {
+          "type": "string",
+          "description": "Native node type (WebAudio builtins)"
+        },
+        "inputs": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 1,
+          "description": "Number of audio inputs"
+        },
+        "outputs": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 1,
+          "description": "Number of audio outputs"
+        },
+        "params": {
+          "type": "object",
+          "description": "Parameter definitions",
+          "propertyNames": { "$ref": "common.schema.json#/$defs/identifier" },
+          "additionalProperties": { "$ref": "#/$defs/paramDef" }
+        },
+        "options": {
+          "type": "object",
+          "description": "Static configuration options",
+          "propertyNames": { "$ref": "common.schema.json#/$defs/identifier" },
+          "additionalProperties": { "$ref": "#/$defs/optionDef" }
+        },
+        "ports": {
+          "type": "object",
+          "description": "Named port definitions",
+          "propertyNames": { "$ref": "common.schema.json#/$defs/identifier" },
+          "additionalProperties": { "$ref": "#/$defs/portDef" }
+        },
+        "meta": { "$ref": "common.schema.json#/$defs/meta" }
+      }
+    },
+    "paramDef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string" },
+        "rate": { "$ref": "common.schema.json#/$defs/paramRate" },
+        "type": { "$ref": "common.schema.json#/$defs/paramScalarType" },
+        "range": { "$ref": "common.schema.json#/$defs/numericRange" },
+        "default": {
+          "oneOf": [
+            { "type": "number" },
+            { "type": "boolean" },
+            { "type": "string" }
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "description": "Physical unit (Hz, dB, ms, etc.)"
+        },
+        "enum": {
+          "type": "array",
+          "items": { "type": ["string", "number", "boolean"] },
+          "description": "Allowed values"
+        }
+      }
+    },
+    "optionDef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["string", "number", "bool", "array", "object"],
+          "default": "string"
+        },
+        "default": {},
+        "required": { "type": "boolean", "default": false }
+      }
+    },
+    "portDef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string" },
+        "direction": { "type": "string", "enum": ["in", "out"] },
+        "index": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bacon.audio/schema/common/0.1",
+  "title": "Bacon Common Definitions",
+  "description": "Shared schema definitions for Bacon IR modules",
+  "$defs": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "Bacon IR version (e.g. '0.1')"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$",
+      "description": "Valid identifier for node IDs, primitive names, param keys"
+    },
+    "meta": {
+      "type": "object",
+      "description": "Arbitrary metadata",
+      "additionalProperties": true
+    },
+    "celExpr": {
+      "type": "string",
+      "minLength": 1,
+      "description": "CEL expression"
+    },
+    "numericRange": {
+      "type": "array",
+      "description": "Inclusive [min, max] range",
+      "items": [
+        { "type": "number", "description": "min" },
+        { "type": "number", "description": "max" }
+      ],
+      "minItems": 2,
+      "maxItems": 2,
+      "additionalItems": false
+    },
+    "paramScalarType": {
+      "type": "string",
+      "enum": ["float", "int", "bool"],
+      "default": "float"
+    },
+    "paramRate": {
+      "type": "string",
+      "enum": ["a", "k"],
+      "default": "a",
+      "description": "a-rate (audio) or k-rate (control)"
+    },
+    "bindValue": {
+      "type": "object",
+      "required": ["bind"],
+      "additionalProperties": false,
+      "properties": {
+        "bind": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Frame parameter name to bind"
+        }
+      }
+    },
+    "exprValue": {
+      "type": "object",
+      "required": ["expr"],
+      "additionalProperties": false,
+      "properties": {
+        "expr": {
+          "$ref": "#/$defs/celExpr"
+        }
+      }
+    },
+    "paramValue": {
+      "description": "Literal, binding, or expression",
+      "oneOf": [
+        { "type": "number" },
+        { "type": "string" },
+        { "type": "boolean" },
+        { "$ref": "#/$defs/bindValue" },
+        { "$ref": "#/$defs/exprValue" }
+      ]
+    },
+    "portRef": {
+      "description": "Reference to a node port",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Node ID (default port)"
+        },
+        {
+          "type": "object",
+          "required": ["node"],
+          "additionalProperties": false,
+          "properties": {
+            "node": { "$ref": "#/$defs/identifier" },
+            "port": {
+              "oneOf": [
+                { "type": "string", "minLength": 1 },
+                { "type": "integer", "minimum": 0 }
+              ],
+              "description": "Port name or index"
+            }
+          }
+        }
+      ]
+    },
+    "connection": {
+      "description": "Signal flow connection",
+      "oneOf": [
+        {
+          "type": "array",
+          "description": "Simple [from, to] connection",
+          "items": [
+            { "$ref": "#/$defs/portRef" },
+            { "$ref": "#/$defs/portRef" }
+          ],
+          "minItems": 2,
+          "maxItems": 2,
+          "additionalItems": false
+        },
+        {
+          "type": "object",
+          "description": "Detailed connection with gain",
+          "required": ["from", "to"],
+          "additionalProperties": false,
+          "properties": {
+            "from": { "$ref": "#/$defs/portRef" },
+            "to": { "$ref": "#/$defs/portRef" },
+            "gain": { "$ref": "#/$defs/paramValue" },
+            "meta": { "$ref": "#/$defs/meta" }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "@bacon/core",
+  "version": "0.1.0",
+  "description": "Bacon IR schemas, validation, and cross-document checking",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "bacon": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "schema"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "check": "node dist/cli.js check",
+    "validate": "node dist/cli.js validate",
+    "format": "node dist/cli.js format"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "commander": "^12.1.0",
+    "yaml": "^2.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.5.4",
+    "vitest": "^4.0.18"
+  }
+}
