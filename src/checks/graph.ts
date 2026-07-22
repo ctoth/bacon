@@ -4,9 +4,11 @@ import {
   isIdentifier,
   isBindValue,
   isExprValue,
+  isParamTargetRef,
   connectionEndpoints,
   portRefNode,
   ParamValue,
+  ParamTargetRef,
   PortRef,
 } from '../types.js';
 import { CheckIssue } from './types.js';
@@ -46,11 +48,12 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
         const prim = registry.primitives[node.type];
 
         // Check params against registry definition
+        const primParams = prim.params ?? {};
         if (node.params) {
           for (const [paramName, paramValue] of Object.entries(node.params)) {
             const paramPath = `${nodePath}/params/${paramName}`;
 
-            if (!(paramName in prim.params)) {
+            if (!(paramName in primParams)) {
               issues.push({
                 severity: 'warning',
                 path: paramPath,
@@ -58,7 +61,7 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
               });
             } else {
               // Validate param value against definition
-              const paramDef = prim.params[paramName];
+              const paramDef = primParams[paramName];
               const valueIssues = validateParamValue(paramValue, paramDef, paramPath);
               issues.push(...valueIssues);
             }
@@ -66,7 +69,7 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
         }
 
         // Check for missing required params (those without defaults)
-        for (const [paramName, paramDef] of Object.entries(prim.params)) {
+        for (const [paramName, paramDef] of Object.entries(primParams)) {
           if (paramDef.default === undefined && (!node.params || !(paramName in node.params))) {
             issues.push({
               severity: 'info',
@@ -128,7 +131,12 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
       // Validate port references against registry
       if (registry) {
         validatePortRef(from, 'out', graph, registry, `${connPath}/from`, issues);
-        validatePortRef(to, 'in', graph, registry, `${connPath}/to`, issues);
+        if (isParamTargetRef(to)) {
+          // Param target: the destination is a parameter, not a port
+          validateParamTarget(to, graph, registry, `${connPath}/to`, issues);
+        } else {
+          validatePortRef(to, 'in', graph, registry, `${connPath}/to`, issues);
+        }
       }
 
       // Check gain if present
@@ -293,5 +301,27 @@ function validatePortRef(
         message: `Port index ${ref.port} out of bounds (max ${expectedDirection}: ${maxPort})`,
       });
     }
+  }
+}
+
+function validateParamTarget(
+  ref: ParamTargetRef,
+  graph: Graph,
+  registry: Registry,
+  path: string,
+  issues: CheckIssue[]
+): void {
+  const node = graph.nodes[ref.node];
+  if (!node) return; // Already reported as unknown node
+
+  const prim = registry.primitives[node.type];
+  if (!prim) return; // Already reported as unknown type
+
+  if (!(ref.param in (prim.params ?? {}))) {
+    issues.push({
+      severity: 'warning',
+      path,
+      message: `Unknown param "${ref.param}" on node "${ref.node}" (type: ${node.type})`,
+    });
   }
 }

@@ -2,17 +2,18 @@
 
 Schema + validation toolkit for Bacon IR documents.
 
-Bacon IR is a small set of YAML/JSON documents used to describe audio graphs, primitive registries, and semantic parameter definitions. This package ships the JSON Schemas, TypeScript types, a validator, and a CLI that runs schema validation plus cross-document checks.
+Bacon IR is a small set of YAML/JSON documents used to describe audio graphs and primitive registries. This package ships the JSON Schemas, TypeScript types, a validator, and a CLI that runs schema validation plus cross-document checks.
+
+Bacon is purely a graph + registry format. Higher-level parameter semantics (named params, constants, realize rules) are the consuming application's domain — see e.g. Qlatt's `semantics.yaml` and its `docs/host-contract.md`.
 
 ## What it validates
 
 - **Graph**: a node/connection graph (with optional inputs/outputs)
 - **Registry**: primitive definitions (params/options/ports/implementations)
-- **Semantics**: named params/constants/functions/realization rules
 
 ## Bacon IR spec (short)
 
-Bacon IR is a minimal audio-graph interchange format built from three YAML/JSON document kinds. Each document is standalone but can reference the others. All documents include a `bacon` version string (e.g. `"0.1"`).
+Bacon IR is a minimal audio-graph interchange format built from two YAML/JSON document kinds. Each document is standalone but can reference the other. All documents include a `bacon` version string (e.g. `"0.1"`).
 
 ### Graph
 
@@ -37,23 +38,26 @@ Defines the available primitive node types.
   - `inputs`/`outputs` counts
   - implementation hints: `wasm`, `worklet`, `native`
 
-### Semantics
+### Implementation hints are bindings, not definitions
 
-Defines higher-level parameter meanings and math.
-
-- Required: `bacon`, `name`
-- Optional: `description`, `extends`, `params`, `constants`, `functions`, `realize`, `meta`
-- `params` are typed inputs with ranges/defaults/units
-- `functions` are small named expressions with parameters
-- `realize` maps names to expressions (or `{ expr, unit? }`)
+`wasm`, `worklet`, and `native` tell a *particular host* how to instantiate a
+primitive; they do not define what the primitive does. A primitive's semantics
+must be owned by something host-independent — a portable implementation (e.g.
+a WASM/Rust module) or a written definition maintained by the registry author.
+A `native` hint is an optimization a host may use only when the host-native
+node conforms to that owned definition. A primitive whose only definition *is*
+a host-native node is not portable and should be treated as a bug in the
+registry.
 
 ### Parameter values
 
 Graph node params and connection gains can be:
 
 - literal number/string/boolean
-- `{ bind: "name" }` to reference semantics params/constants
-- `{ expr: "..." }` for an inline expression
+- `{ bind: "name" }` to reference a parameter name supplied by the consuming
+  application (bacon validates only that the name is non-empty)
+- `{ expr: "..." }` for an inline expression (evaluated by the consuming
+  application)
 
 ## Install
 
@@ -70,7 +74,7 @@ After building (or when installed as a dependency), you can use the `bacon` bina
 bacon validate path/to/graph.yaml
 bacon validate --kind registry path/to/registry.json
 
-# validate + cross-document checks (loads referenced registry/semantics)
+# validate + cross-document checks (loads referenced registry)
 bacon check path/to/graph.yaml
 
 # reformat YAML/JSON (sorted keys, stable style)
@@ -88,7 +92,17 @@ bacon check path/to/graph.yaml --json
 ```yaml
 meta:
   primitives: ./registry.yaml
-  semantics: ./semantics.yaml
+```
+
+`meta.primitives` may also be a list of registry paths. Registries are merged
+in order, with later entries overriding earlier ones per primitive — a base
+registry can be layered under an experiment's additions:
+
+```yaml
+meta:
+  primitives:
+    - ../base/registry.yaml
+    - ./registry.yaml
 ```
 
 ## Programmatic API

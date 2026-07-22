@@ -86,9 +86,18 @@ program
     const ctx: GraphCheckContext = {};
     let allIssues: CheckIssue[] = [];
 
-    // Load and check registry if referenced
-    if (typeof meta.primitives === 'string') {
-      const regPath = resolvePath(graphFile, meta.primitives);
+    // Load and check registries if referenced.
+    // meta.primitives is a path or a list of paths; lists are merged in order,
+    // with later registries overriding earlier ones per primitive (layering).
+    const primitiveRefs: string[] =
+      typeof meta.primitives === 'string'
+        ? [meta.primitives]
+        : Array.isArray(meta.primitives)
+          ? meta.primitives.filter((p): p is string => typeof p === 'string')
+          : [];
+    let merged: Registry | undefined;
+    for (const ref of primitiveRefs) {
+      const regPath = resolvePath(graphFile, ref);
       const rawReg = readDocument(regPath);
 
       const regSchemaIssues = validator.validate('registry', rawReg);
@@ -98,12 +107,19 @@ program
         return;
       }
 
-      ctx.registry = rawReg as Registry;
-      const regChecks = checkRegistry(ctx.registry);
+      const reg = rawReg as Registry;
+      const regChecks = checkRegistry(reg);
       if (regChecks.length) {
         printIssues(`checks:registry (${basename(regPath)})`, regChecks, opts);
         allIssues = allIssues.concat(regChecks);
       }
+
+      merged = merged
+        ? { ...merged, primitives: { ...merged.primitives, ...reg.primitives } }
+        : reg;
+    }
+    if (merged) {
+      ctx.registry = merged;
     }
 
     // Run graph checks

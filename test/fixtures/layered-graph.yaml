@@ -1,0 +1,27 @@
+bacon: "0.1"
+name: layered-synth
+meta:
+  primitives:
+    - ./layered-base-registry.yaml
+    - ./layered-child-registry.yaml
+nodes:
+  osc1:
+    type: osc
+    params:
+      frequency: 440
+  lfo:
+    type: osc
+    params:
+      frequency: 30
+  out:
+    type: gain
+    params:
+      gain: 0.5
+  scope:
+    type: meter
+connections:
+  - [osc1, out]
+  - [out, scope]
+  - [lfo, { node: out, param: gain }]
+outputs:
+  - out

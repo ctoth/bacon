@@ -1,0 +1,18 @@
+bacon: "0.1"
+name: layered-synth-bad-param
+meta:
+  primitives:
+    - ./layered-base-registry.yaml
+    - ./layered-child-registry.yaml
+nodes:
+  osc1:
+    type: osc
+    params:
+      frequency: 440
+  out:
+    type: gain
+connections:
+  - [osc1, out]
+  - [osc1, { node: out, param: detune }]
+outputs:
+  - out

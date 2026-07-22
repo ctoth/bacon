@@ -1,0 +1,23 @@
+bacon: "0.1"
+primitives:
+  gain:
+    description: Simple gain node
+    native: GainNode
+    inputs: 1
+    outputs: 1
+    params:
+      gain:
+        description: Gain multiplier
+        type: float
+        range: [0, 10]
+        default: 1
+
+  meter:
+    description: Options-only sink (no automatable params)
+    native: AnalyserNode
+    inputs: 1
+    outputs: 0
+    options:
+      fftSize:
+        type: int
+        default: 2048

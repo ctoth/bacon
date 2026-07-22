@@ -1,0 +1,14 @@
+bacon: "0.1"
+primitives:
+  osc:
+    description: Oscillator
+    native: OscillatorNode
+    inputs: 0
+    outputs: 1
+    params:
+      frequency:
+        description: Frequency in Hz
+        type: float
+        range: [20, 20000]
+        default: 440
+        unit: Hz
