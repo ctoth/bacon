@@ -21,6 +21,7 @@
     "schemas"
   ],
   "scripts": {
+    "prepare": "npm run build",
     "build": "tsc",
     "test": "vitest run",
     "check": "node dist/cli.js check",
