@@ -7,7 +7,11 @@ Qlatt #252 without changing the Node Validator or CLI loading interface.
 
 Started from merged prerequisite 61bce06. Source and issue read; no local CI.
 Implemented structural changes and regression fixtures first, then the pure
-schema validator/Node adapter split and package exports. Preparing publication.
+schema validator/Node adapter split and package exports. Published PR #10 at
+ee4143c6; hosted Node 20 and 22 build/tests passed on that head.
+Claude completed its full PR review, including the task note and PR diff,
+with no actionable defects. Accepted that disposition; no production changes
+were requested. Review session: 6fac53b6-0f07-49a9-92c3-100000000010.
 
 # Decisions and why
 
@@ -29,5 +33,6 @@ Most validator lines move unchanged; no validation algorithm is duplicated.
 
 # Next step
 
-Implement and publish for hosted Node 20/22 build/tests, full Claude review and
-implementer response. Supervisor owns independent review gate and merge.
+Push this review response and await final-head hosted CI. Supervisor owns
+independent review gate and merge. Qlatt dependency installation and integration
+remain separate work; this PR does not claim a browser bundle was exercised.
