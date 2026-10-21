@@ -23,9 +23,16 @@ export interface PortRefObj {
 
 export type PortRef = string | PortRefObj;
 
+export interface ParamTargetRef {
+  node: string;
+  param: string;
+}
+
+export type ConnectionTarget = PortRef | ParamTargetRef;
+
 export type Connection =
-  | [PortRef, PortRef]
-  | { from: PortRef; to: PortRef; gain?: ParamValue; meta?: Record<string, unknown> };
+  | [PortRef, ConnectionTarget]
+  | { from: PortRef; to: ConnectionTarget; gain?: ParamValue; meta?: Record<string, unknown> };
 
 // Graph types
 export interface GraphNode {
@@ -59,7 +66,7 @@ export interface ParamDef {
 
 export interface OptionDef {
   description?: string;
-  type?: 'string' | 'number' | 'bool' | 'array' | 'object';
+  type?: 'string' | 'number' | 'float' | 'int' | 'bool' | 'array' | 'object';
   default?: unknown;
   required?: boolean;
 }
@@ -77,7 +84,7 @@ export interface PrimitiveDef {
   native?: string;
   inputs?: number;
   outputs?: number;
-  params: Record<string, ParamDef>;
+  params?: Record<string, ParamDef>;
   options?: Record<string, OptionDef>;
   ports?: Record<string, PortDef>;
   meta?: Record<string, unknown>;
@@ -86,37 +93,6 @@ export interface PrimitiveDef {
 export interface Registry {
   bacon: BaconVersion;
   primitives: Record<string, PrimitiveDef>;
-}
-
-// Semantics types
-export interface InputParamDef {
-  description?: string;
-  type?: 'float' | 'int' | 'bool';
-  range?: [number, number];
-  default?: number | boolean;
-  unit?: string;
-}
-
-export type ConstantDef = number | string | boolean | unknown[] | Record<string, unknown>;
-
-export interface FunctionDef {
-  description?: string;
-  params: string[];
-  expr: string;
-}
-
-export type RealizationRule = string | { description?: string; expr: string; unit?: string };
-
-export interface Semantics {
-  bacon: BaconVersion;
-  name: string;
-  extends?: string;
-  description?: string;
-  meta?: Record<string, unknown>;
-  params?: Record<string, InputParamDef>;
-  constants?: Record<string, ConstantDef>;
-  functions?: Record<string, FunctionDef>;
-  realize?: Record<string, RealizationRule>;
 }
 
 // Type guards
@@ -132,12 +108,23 @@ export function isPortRefObj(p: unknown): p is PortRefObj {
   return typeof p === 'object' && p !== null && 'node' in p && typeof (p as PortRefObj).node === 'string';
 }
 
+export function isParamTargetRef(p: unknown): p is ParamTargetRef {
+  return (
+    typeof p === 'object' &&
+    p !== null &&
+    'node' in p &&
+    'param' in p &&
+    typeof (p as ParamTargetRef).node === 'string' &&
+    typeof (p as ParamTargetRef).param === 'string'
+  );
+}
+
 // Utilities
-export function connectionEndpoints(c: Connection): { from: PortRef; to: PortRef } {
+export function connectionEndpoints(c: Connection): { from: PortRef; to: ConnectionTarget } {
   return Array.isArray(c) ? { from: c[0], to: c[1] } : { from: c.from, to: c.to };
 }
 
-export function portRefNode(p: PortRef): string {
+export function portRefNode(p: ConnectionTarget): string {
   return typeof p === 'string' ? p : p.node;
 }
 

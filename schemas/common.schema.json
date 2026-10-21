@@ -102,6 +102,23 @@
         }
       ]
     },
+    "paramTargetRef": {
+      "type": "object",
+      "description": "Reference to a parameter of a node, as a connection target (audio-rate modulation of a param)",
+      "required": ["node", "param"],
+      "additionalProperties": false,
+      "properties": {
+        "node": { "$ref": "#/$defs/identifier" },
+        "param": { "$ref": "#/$defs/identifier" }
+      }
+    },
+    "connectionTarget": {
+      "description": "Connection destination: a node port, or a node parameter",
+      "oneOf": [
+        { "$ref": "#/$defs/portRef" },
+        { "$ref": "#/$defs/paramTargetRef" }
+      ]
+    },
     "connection": {
       "description": "Signal flow connection",
       "oneOf": [
@@ -110,7 +127,7 @@
           "description": "Simple [from, to] connection",
           "items": [
             { "$ref": "#/$defs/portRef" },
-            { "$ref": "#/$defs/portRef" }
+            { "$ref": "#/$defs/connectionTarget" }
           ],
           "minItems": 2,
           "maxItems": 2,
@@ -123,7 +140,7 @@
           "additionalProperties": false,
           "properties": {
             "from": { "$ref": "#/$defs/portRef" },
-            "to": { "$ref": "#/$defs/portRef" },
+            "to": { "$ref": "#/$defs/connectionTarget" },
             "gain": { "$ref": "#/$defs/paramValue" },
             "meta": { "$ref": "#/$defs/meta" }
           }

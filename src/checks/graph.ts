@@ -1,25 +1,25 @@
 import {
   Graph,
   Registry,
-  Semantics,
   isIdentifier,
   isBindValue,
   isExprValue,
+  isParamTargetRef,
   connectionEndpoints,
   portRefNode,
   ParamValue,
+  ParamTargetRef,
   PortRef,
 } from '../types.js';
 import { CheckIssue } from './types.js';
 
 export interface GraphCheckContext {
   registry?: Registry;
-  semantics?: Semantics;
 }
 
 export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssue[] {
   const issues: CheckIssue[] = [];
-  const { registry, semantics } = ctx;
+  const { registry } = ctx;
 
   const nodeIds = new Set(Object.keys(graph.nodes));
 
@@ -48,11 +48,12 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
         const prim = registry.primitives[node.type];
 
         // Check params against registry definition
+        const primParams = prim.params ?? {};
         if (node.params) {
           for (const [paramName, paramValue] of Object.entries(node.params)) {
             const paramPath = `${nodePath}/params/${paramName}`;
 
-            if (!(paramName in prim.params)) {
+            if (!(paramName in primParams)) {
               issues.push({
                 severity: 'warning',
                 path: paramPath,
@@ -60,15 +61,15 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
               });
             } else {
               // Validate param value against definition
-              const paramDef = prim.params[paramName];
-              const valueIssues = validateParamValue(paramValue, paramDef, paramPath, semantics);
+              const paramDef = primParams[paramName];
+              const valueIssues = validateParamValue(paramValue, paramDef, paramPath);
               issues.push(...valueIssues);
             }
           }
         }
 
         // Check for missing required params (those without defaults)
-        for (const [paramName, paramDef] of Object.entries(prim.params)) {
+        for (const [paramName, paramDef] of Object.entries(primParams)) {
           if (paramDef.default === undefined && (!node.params || !(paramName in node.params))) {
             issues.push({
               severity: 'info',
@@ -95,7 +96,7 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
 
     // Validate bypass if present
     if (node.bypass !== undefined) {
-      const bypassIssues = validateParamValue(node.bypass, { type: 'bool' }, `${nodePath}/bypass`, semantics);
+      const bypassIssues = validateParamValue(node.bypass, { type: 'bool' }, `${nodePath}/bypass`);
       issues.push(...bypassIssues);
     }
   }
@@ -130,12 +131,17 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
       // Validate port references against registry
       if (registry) {
         validatePortRef(from, 'out', graph, registry, `${connPath}/from`, issues);
-        validatePortRef(to, 'in', graph, registry, `${connPath}/to`, issues);
+        if (isParamTargetRef(to)) {
+          // Param target: the destination is a parameter, not a port
+          validateParamTarget(to, graph, registry, `${connPath}/to`, issues);
+        } else {
+          validatePortRef(to, 'in', graph, registry, `${connPath}/to`, issues);
+        }
       }
 
       // Check gain if present
       if (!Array.isArray(conn) && conn.gain !== undefined) {
-        const gainIssues = validateParamValue(conn.gain, { type: 'float' }, `${connPath}/gain`, semantics);
+        const gainIssues = validateParamValue(conn.gain, { type: 'float' }, `${connPath}/gain`);
         issues.push(...gainIssues);
       }
     }
@@ -177,26 +183,18 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
 function validateParamValue(
   value: ParamValue,
   paramDef: { type?: string; range?: [number, number]; enum?: Array<string | number | boolean> },
-  path: string,
-  semantics?: Semantics
+  path: string
 ): CheckIssue[] {
   const issues: CheckIssue[] = [];
 
   if (isBindValue(value)) {
-    // Check that the bound name exists in semantics
-    if (semantics) {
-      const boundName = value.bind;
-      const allNames = new Set([
-        ...Object.keys(semantics.params || {}),
-        ...Object.keys(semantics.constants || {}),
-      ]);
-      if (!allNames.has(boundName)) {
-        issues.push({
-          severity: 'warning',
-          path,
-          message: `Binding references unknown semantics param/constant: "${boundName}"`,
-        });
-      }
+    // Just validate it's a non-empty string - what it binds to is the runtime's problem
+    if (!value.bind || value.bind.trim().length === 0) {
+      issues.push({
+        severity: 'error',
+        path,
+        message: `Empty binding name`,
+      });
     }
     return issues;
   }
@@ -303,5 +301,27 @@ function validatePortRef(
         message: `Port index ${ref.port} out of bounds (max ${expectedDirection}: ${maxPort})`,
       });
     }
+  }
+}
+
+function validateParamTarget(
+  ref: ParamTargetRef,
+  graph: Graph,
+  registry: Registry,
+  path: string,
+  issues: CheckIssue[]
+): void {
+  const node = graph.nodes[ref.node];
+  if (!node) return; // Already reported as unknown node
+
+  const prim = registry.primitives[node.type];
+  if (!prim) return; // Already reported as unknown type
+
+  if (!(ref.param in (prim.params ?? {}))) {
+    issues.push({
+      severity: 'warning',
+      path,
+      message: `Unknown param "${ref.param}" on node "${ref.node}" (type: ${node.type})`,
+    });
   }
 }

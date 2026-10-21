@@ -17,7 +17,7 @@ export function checkRegistry(registry: Registry): CheckIssue[] {
     }
 
     // Check parameter definitions
-    for (const [paramName, paramDef] of Object.entries(prim.params)) {
+    for (const [paramName, paramDef] of Object.entries(prim.params ?? {})) {
       const paramPath = `${primPath}/params/${paramName}`;
 
       // Check param name is valid identifier

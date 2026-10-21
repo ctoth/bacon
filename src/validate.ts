@@ -10,7 +10,7 @@ const Ajv = _Ajv as unknown as typeof _Ajv.default;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export type SchemaKind = 'graph' | 'registry' | 'semantics';
+export type SchemaKind = 'graph' | 'registry';
 
 export interface ValidationIssue {
   path: string;
@@ -36,7 +36,7 @@ export class Validator {
     this.ajv.addSchema(commonSchema, 'common.schema.json');
 
     // Load document schemas
-    for (const kind of ['graph', 'registry', 'semantics'] as const) {
+    for (const kind of ['graph', 'registry'] as const) {
       const schema = JSON.parse(readFileSync(join(schemaDir, `${kind}.schema.json`), 'utf-8'));
       // Remove $id so relative refs resolve against our namespace
       delete schema.$id;
@@ -73,9 +73,6 @@ export function guessKind(doc: unknown): SchemaKind | null {
 
   if ('primitives' in obj) {
     return 'registry';
-  }
-  if ('realize' in obj || ('name' in obj && 'params' in obj && !('nodes' in obj))) {
-    return 'semantics';
   }
   if ('nodes' in obj) {
     return 'graph';

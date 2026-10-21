@@ -18,7 +18,6 @@
   "$defs": {
     "primitive": {
       "type": "object",
-      "required": ["params"],
       "additionalProperties": false,
       "properties": {
         "description": { "type": "string" },
@@ -100,7 +99,7 @@
         "description": { "type": "string" },
         "type": {
           "type": "string",
-          "enum": ["string", "number", "bool", "array", "object"],
+          "enum": ["string", "number", "float", "int", "bool", "array", "object"],
           "default": "string"
         },
         "default": {},

@@ -35,12 +35,6 @@ describe('CLI validate', () => {
     expect(result.stdout).toContain('OK');
   });
 
-  it('validates valid semantics', () => {
-    const result = run('validate valid-semantics.yaml');
-    expect(result.code).toBe(0);
-    expect(result.stdout).toContain('OK');
-  });
-
   it('rejects invalid graph', () => {
     const result = run('validate invalid-graph.yaml');
     expect(result.code).toBe(1);
@@ -57,6 +51,19 @@ describe('CLI check', () => {
     const result = run('check valid-graph.yaml');
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('OK');
+  });
+
+  it('merges layered registries and accepts param connection targets', () => {
+    // layered-graph.yaml: meta.primitives is a list (base + child registries),
+    // uses a params-less primitive, and connects an osc into a param target
+    const result = run('check layered-graph.yaml');
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain('OK');
+  });
+
+  it('warns on unknown param target', () => {
+    const result = run('check layered-graph-bad-param.yaml');
+    expect(result.stdout + result.stderr).toContain('Unknown param "detune"');
   });
 });
 

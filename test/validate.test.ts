@@ -43,19 +43,6 @@ describe('Validator', () => {
     });
   });
 
-  describe('validate semantics', () => {
-    it('accepts valid semantics', () => {
-      const doc = readDocument(join(fixtures, 'valid-semantics.yaml'));
-      const issues = validator.validate('semantics', doc);
-      expect(issues).toEqual([]);
-    });
-
-    it('rejects semantics missing name', () => {
-      const doc = { bacon: '0.1' };
-      const issues = validator.validate('semantics', doc);
-      expect(issues.length).toBeGreaterThan(0);
-    });
-  });
 });
 
 describe('guessKind', () => {
@@ -65,10 +52,6 @@ describe('guessKind', () => {
 
   it('detects graph', () => {
     expect(guessKind({ nodes: {} })).toBe('graph');
-  });
-
-  it('detects semantics', () => {
-    expect(guessKind({ name: 'test', realize: {} })).toBe('semantics');
   });
 
   it('returns null for unknown', () => {
