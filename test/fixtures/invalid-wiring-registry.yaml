@@ -1,0 +1,19 @@
+bacon: "0.1"
+primitives:
+  unit:
+    native: GainNode
+    inputs: 1
+    outputs: 1
+    params:
+      required: { type: float }
+      integer: { type: int, default: 0 }
+      bounded: { type: float, range: [0, 1], default: 0 }
+      choice: { type: int, enum: [0, 2], default: 0 }
+      boolean: { type: bool, default: false }
+    ports:
+      input: { direction: in, index: 0 }
+      output: { direction: out, index: 0 }
+  closed:
+    native: GainNode
+    inputs: 0
+    outputs: 0

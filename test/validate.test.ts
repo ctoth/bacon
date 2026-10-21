@@ -1,12 +1,30 @@
 import { describe, it, expect } from 'vitest';
 import { Validator, guessKind } from '../src/validate.js';
 import { readDocument } from '../src/io.js';
+import { Validator as PureValidator, type Schemas } from '../src/pure.js';
 import { join } from 'path';
 
 const fixtures = join(import.meta.dirname, 'fixtures');
 
 describe('Validator', () => {
   const validator = new Validator();
+
+  it('validates supplied schemas without changing their identities', () => {
+    const schemas: Schemas = {
+      common: readDocument(join(fixtures, '../../schemas/common.schema.json')) as object,
+      graph: readDocument(join(fixtures, '../../schemas/graph.schema.json')) as object,
+      registry: readDocument(join(fixtures, '../../schemas/registry.schema.json')) as object,
+    };
+    const before = structuredClone(schemas);
+    const pure = new PureValidator(schemas);
+    for (const kind of ['graph', 'registry'] as const) {
+      for (const name of [`valid-${kind}.yaml`, `invalid-${kind}.yaml`]) {
+        const document = readDocument(join(fixtures, name));
+        expect(pure.validate(kind, document)).toEqual(validator.validate(kind, document));
+      }
+    }
+    expect(schemas).toEqual(before);
+  });
 
   describe('validate registry', () => {
     it('accepts valid registry', () => {
