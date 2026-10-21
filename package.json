@@ -6,12 +6,19 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./pure": "./dist/pure.js",
+    "./schemas/*": "./schemas/*",
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
+  },
   "bin": {
     "bacon": "dist/cli.js"
   },
   "files": [
     "dist",
-    "schema"
+    "schemas"
   ],
   "scripts": {
     "build": "tsc",

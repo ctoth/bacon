@@ -1,0 +1,25 @@
+bacon: "0.1"
+meta:
+  primitives: ./invalid-wiring-registry.yaml
+nodes:
+  a:
+    type: unit
+    params:
+      unknown: 1
+      integer: 0.5
+      bounded: 2
+      choice: 1
+      boolean: 3
+  b:
+    type: closed
+connections:
+  - [{ node: a, port: missing }, a]
+  - [{ node: a, port: input }, a]
+  - [{ node: a, port: 1 }, a]
+  - [b, a]
+  - [a, { node: b, port: missing }]
+  - [a, { node: a, param: absent }]
+inputs:
+  - b
+outputs:
+  - { node: a, port: input }

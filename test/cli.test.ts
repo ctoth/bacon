@@ -61,9 +61,23 @@ describe('CLI check', () => {
     expect(result.stdout).toContain('OK');
   });
 
-  it('warns on unknown param target', () => {
+  it('rejects an unknown param target', () => {
     const result = run('check layered-graph-bad-param.yaml');
+    expect(result.code).toBe(1);
     expect(result.stdout + result.stderr).toContain('Unknown param "detune"');
+  });
+
+  it('rejects invalid parameters and all endpoint surfaces with exact paths', () => {
+    const result = run('check invalid-wiring.yaml --json');
+    expect(result.code).toBe(1);
+    const output = result.stdout + result.stderr;
+    for (const field of ['unknown', 'required', 'integer', 'bounded', 'choice', 'boolean']) {
+      expect(output).toContain(`/nodes/a/params/${field}`);
+    }
+    for (const field of [
+      '/connections/0/from', '/connections/1/from', '/connections/2/from',
+      '/connections/3/from', '/connections/4/to', '/connections/5/to', '/inputs/0', '/outputs/0',
+    ]) expect(output).toContain(field);
   });
 });
 

@@ -55,7 +55,7 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
 
             if (!(paramName in primParams)) {
               issues.push({
-                severity: 'warning',
+                severity: 'error',
                 path: paramPath,
                 message: `Unknown param "${paramName}" for primitive "${node.type}"`,
               });
@@ -72,8 +72,8 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
         for (const [paramName, paramDef] of Object.entries(primParams)) {
           if (paramDef.default === undefined && (!node.params || !(paramName in node.params))) {
             issues.push({
-              severity: 'info',
-              path: `${nodePath}/params`,
+              severity: 'error',
+              path: `${nodePath}/params/${paramName}`,
               message: `Param "${paramName}" has no default and is not specified`,
             });
           }
@@ -159,6 +159,7 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
           message: `Input references unknown node: "${inputNode}"`,
         });
       }
+      if (registry) validatePortRef(input, 'in', graph, registry, `/inputs/${i}`, issues);
     }
   }
 
@@ -174,6 +175,7 @@ export function checkGraph(graph: Graph, ctx: GraphCheckContext = {}): CheckIssu
           message: `Output references unknown node: "${outputNode}"`,
         });
       }
+      if (registry) validatePortRef(output, 'out', graph, registry, `/outputs/${i}`, issues);
     }
   }
 
@@ -219,7 +221,7 @@ function validateParamValue(
     const expectedType = paramDef.type === 'bool' ? 'boolean' : paramDef.type === 'int' || paramDef.type === 'float' ? 'number' : 'string';
     if (valType !== expectedType) {
       issues.push({
-        severity: 'warning',
+        severity: 'error',
         path,
         message: `Value type "${valType}" doesn't match expected type "${paramDef.type}"`,
       });
@@ -228,7 +230,7 @@ function validateParamValue(
     // Int check
     if (paramDef.type === 'int' && valType === 'number' && !Number.isInteger(value)) {
       issues.push({
-        severity: 'warning',
+        severity: 'error',
         path,
         message: `Value ${value} should be an integer`,
       });
@@ -240,7 +242,7 @@ function validateParamValue(
     const [min, max] = paramDef.range;
     if (value < min || value > max) {
       issues.push({
-        severity: 'warning',
+        severity: 'error',
         path,
         message: `Value ${value} outside range [${min}, ${max}]`,
       });
@@ -250,7 +252,7 @@ function validateParamValue(
   // Enum check
   if (paramDef.enum && !paramDef.enum.includes(value as string | number | boolean)) {
     issues.push({
-      severity: 'warning',
+      severity: 'error',
       path,
       message: `Value "${value}" not in allowed enum: [${paramDef.enum.join(', ')}]`,
     });
@@ -274,33 +276,36 @@ function validatePortRef(
   const prim = registry.primitives[node.type];
   if (!prim) return; // Already reported as unknown type
 
-  // If port is specified by name, check it exists
-  if (typeof ref === 'object' && ref.port !== undefined && typeof ref.port === 'string') {
-    if (prim.ports && !(ref.port in prim.ports)) {
-      issues.push({
-        severity: 'warning',
-        path,
-        message: `Unknown port "${ref.port}" on node "${nodeId}" (type: ${node.type})`,
-      });
-    } else if (prim.ports && prim.ports[ref.port].direction && prim.ports[ref.port].direction !== expectedDirection) {
+  const requested = typeof ref === 'string' ? undefined : ref.port;
+  let index = typeof requested === 'number' ? requested : 0;
+  if (typeof requested === 'string') {
+    const named = prim.ports && Object.hasOwn(prim.ports, requested) ? prim.ports[requested] : undefined;
+    if (!named) {
       issues.push({
         severity: 'error',
         path,
-        message: `Port "${ref.port}" is ${prim.ports[ref.port].direction}, expected ${expectedDirection}`,
+        message: `Unknown port "${requested}" on node "${nodeId}" (type: ${node.type})`,
       });
+      return;
     }
+    if (named.direction !== expectedDirection) {
+      issues.push({
+        severity: 'error',
+        path,
+        message: `Port "${requested}" on node "${nodeId}" (type: ${node.type}) is ${named.direction}, expected ${expectedDirection}`,
+      });
+      return;
+    }
+    index = named.index ?? NaN;
   }
 
-  // If port is specified by index, check it's within bounds
-  if (typeof ref === 'object' && typeof ref.port === 'number') {
-    const maxPort = expectedDirection === 'in' ? (prim.inputs ?? 1) : (prim.outputs ?? 1);
-    if (ref.port >= maxPort) {
-      issues.push({
-        severity: 'error',
-        path,
-        message: `Port index ${ref.port} out of bounds (max ${expectedDirection}: ${maxPort})`,
-      });
-    }
+  const count = expectedDirection === 'in' ? (prim.inputs ?? 1) : (prim.outputs ?? 1);
+  if (!Number.isInteger(count) || count < 0 || !Number.isInteger(index) || index < 0 || index >= count) {
+    issues.push({
+      severity: 'error',
+      path,
+      message: `Invalid ${expectedDirection} port index ${index} on node "${nodeId}" (type: ${node.type}, count: ${count})`,
+    });
   }
 }
 
@@ -319,7 +324,7 @@ function validateParamTarget(
 
   if (!(ref.param in (prim.params ?? {}))) {
     issues.push({
-      severity: 'warning',
+      severity: 'error',
       path,
       message: `Unknown param "${ref.param}" on node "${ref.node}" (type: ${node.type})`,
     });

@@ -7,6 +7,14 @@ export function checkRegistry(registry: Registry): CheckIssue[] {
   for (const [primName, prim] of Object.entries(registry.primitives)) {
     const primPath = `/primitives/${primName}`;
 
+    for (const field of ['inputs', 'outputs'] as const) {
+      const count = prim[field];
+      if (count !== undefined && (!Number.isInteger(count) || count < 0)) {
+        issues.push({ severity: 'error', path: `${primPath}/${field}`,
+          message: `Invalid ${field} count ${count} for primitive "${primName}"` });
+      }
+    }
+
     // Check primitive name is valid identifier
     if (!isIdentifier(primName)) {
       issues.push({
@@ -108,6 +116,17 @@ export function checkRegistry(registry: Registry): CheckIssue[] {
         }
 
         // Track indices for collision detection
+        const count = portDef.direction === 'in' ? (prim.inputs ?? 1) : (prim.outputs ?? 1);
+        if (
+          (portDef.direction !== 'in' && portDef.direction !== 'out') ||
+          portDef.index === undefined || !Number.isInteger(portDef.index) ||
+          portDef.index < 0 || portDef.index >= count
+        ) {
+          issues.push({
+            severity: 'error', path: `${portPath}/index`,
+            message: `Invalid ${String(portDef.direction)} port index ${String(portDef.index)} for primitive "${primName}" (count: ${count})`,
+          });
+        }
         if (portDef.index !== undefined && portDef.direction) {
           const key = portDef.direction;
           const indices = seenIndices.get(key) || [];

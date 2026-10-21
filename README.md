@@ -123,6 +123,27 @@ if (issues.length) {
 
 TypeScript types are exported from the package as well (see `src/types.ts`).
 
+Browser and other hosts with already-loaded schema objects use the pure entry:
+
+```ts
+import { Validator, checkGraph, checkRegistry } from '@bacon/core/pure';
+
+const validator = new Validator({ common: commonSchema, graph: graphSchema, registry: registrySchema });
+```
+
+The three JSON schemas are shipped under `@bacon/core/schemas/`. The pure entry
+performs no document or filesystem loading; the existing Node `Validator()`
+continues to load those packaged files. Validate document schemas before calling
+the typed structural checkers.
+
+Unknown node parameters, missing parameters without defaults, invalid literals,
+unknown parameter targets and invalid endpoint ports are errors. `bacon check`
+exits nonzero for them. Omitted port counts default to one; omitted endpoint
+ports select index zero. Named ports require a direction and an index within
+that direction's count. Graph inputs address node inputs and graph outputs
+address node outputs. Valid feedback connections remain legal. Bound values and
+expressions remain the consuming application's responsibility.
+
 ## Examples
 
 Graph + registry (YAML):
